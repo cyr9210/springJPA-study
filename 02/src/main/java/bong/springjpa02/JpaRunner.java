@@ -6,12 +6,12 @@ import org.hibernate.Session;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.transaction.Transactional;
 
-@Component
+//@Component
 @Transactional
 public class JpaRunner implements ApplicationRunner {
 
@@ -28,12 +28,15 @@ public class JpaRunner implements ApplicationRunner {
         study.setName("spring data JPA");
 
         account.add(study);
-
-
 //        entityManager.persist(account);
 
         Session session = entityManager.unwrap(Session.class);
         session.save(account);
         session.save(study);
+
+        Account bong = session.load(Account.class, account.getId());
+        bong.setUsername("bong");
+        System.out.println("============================");
+        System.out.println(bong.getUsername());
      }
 }
