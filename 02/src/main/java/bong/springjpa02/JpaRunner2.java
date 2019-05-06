@@ -13,8 +13,8 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
-@Component
-@Transactional
+//@Component
+//@Transactional
 public class JpaRunner2 implements ApplicationRunner {
 
     @PersistenceContext
