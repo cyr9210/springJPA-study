@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
+import java.util.List;
 
 @Component
 @Transactional
@@ -31,11 +33,24 @@ public class JpaRunner2 implements ApplicationRunner {
 //        comment2.setComment("금방봐야지");
 //        post.addCommnet(comment2);
 
-        Session session = entityManager.unwrap(Session.class);
+//        Session session = entityManager.unwrap(Session.class);
+//
+////        session.save(post);
+//
+//        Comment comment = session.get(Comment.class, 12l);
+////        session.delete(post);
+//        System.out.println("========================");
+//        System.out.println(comment.getComment());
+//        System.out.println(comment.getPost().getTitle());
 
-//        session.save(post);
-        Post post = session.get(Post.class, 8l);
-        session.delete(post);
+//        TypedQuery<Post> query = entityManager.createQuery("SELECT p FROM Post As p", Post.class);
+//        List<Post> posts = query.getResultList();
+//        posts.forEach(System.out::println);
+
+        List<Post> posts = entityManager.createNativeQuery("SELECT * FROM Post", Post.class).getResultList();
+        posts.forEach(p -> {
+            System.out.println(p);
+        });
 
     }
 }

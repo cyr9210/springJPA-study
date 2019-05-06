@@ -12,7 +12,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 //@Component
-@Transactional
+//@Transactional
 public class JpaRunner implements ApplicationRunner {
 
     @PersistenceContext

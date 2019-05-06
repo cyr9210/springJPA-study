@@ -2,6 +2,8 @@ package bong.springjpa02.post;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.FetchMode;
+import org.hibernate.loader.plan.spi.Fetch;
 
 import javax.persistence.*;
 import java.util.HashSet;
