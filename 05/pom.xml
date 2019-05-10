@@ -8,10 +8,10 @@
         <version>2.1.4.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>me.bong</groupId>
-    <artifactId>spring-jpa-04</artifactId>
+    <groupId>bong</groupId>
+    <artifactId>spring-jpa-05</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>spring-jpa-04</name>
+    <name>spring-jpa-05</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>
@@ -37,11 +37,6 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -79,6 +74,7 @@
                 </executions>
             </plugin>
         </plugins>
+
     </build>
 
 </project>

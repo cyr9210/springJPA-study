@@ -1,10 +1,14 @@
 package me.bong.springjpa04.post;
 
+import com.querydsl.core.types.Predicate;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,4 +36,18 @@ public class PostRepositoryTest {
 //        postRepository.flush(); // 어자피 기본적으로 Test는 롤백이기 때문에 delete할 필요가 없어서 delete쿼리문을 날리지 않기 때문에 강제로 flush 한다.
 //        postRepository.findMyPost(); //select문을 넣어주면 영향을 주기 때문에 delete 쿼리문을 날린다.
     }
+
+    @Test
+    public void queryDslTest(){
+        Post post = new Post();
+        post.setTitle("hibernate");
+        postRepository.save(post.publish());
+
+        Predicate predicate = QPost.post.title.containsIgnoreCase("hibernate");
+        Optional<Post> one = postRepository.findOne(predicate);
+
+        System.out.println(one.get().getTitle());
+        assertThat(one).isNotEmpty();
+    }
+
 }
