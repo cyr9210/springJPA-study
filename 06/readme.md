@@ -222,6 +222,7 @@
 - 리포지토리 메소드에 정의한 쿼리 사용하기
     - @Query
     - @Query(nativeQuery=true)
+<br><br>
 
 ### Sort
 - **이전과 마찬가지로 Pageable이나 Sort를 매개변수로 사용할 수 있는데, @Query와 같이 사용할 때 제약 사항이 하나 있다.**
@@ -229,7 +230,7 @@
 - Order by 절에서 함수를 호출하는 경우에는 Sort를 사용하지 못합니다. 그 경우에는 JpaSort.unsafe()를 사용 해야 합니다.
     - JpaSort.unsafe()를 사용하면 함수 호출을 할 수 있습니다.
     - JpaSort.unsafe(“LENGTH(firstname)”);
-
+<br><br>
 ### Named Parameter과 SpEL
 #### Named Parameter
 - @Query에서 참조하는 매개변수를 ?1, ?2 이렇게 채번으로 참조하는게 아니라 이름으로 :title 이렇게 참조할 수 있다.
@@ -246,3 +247,48 @@
      @Query("SELECT p FROM #{#entityName} AS p WHERE p.title = :title")
      List<Post> findByTitle(@Param("title") String title, Sort sort);
     ```
+<br>
+
+### Update 쿼리 메소드
+#### Update 또는 Delete 쿼리 직접 정의하기
+- 객체의 변화를 인지하고 데이터베이스에 동기화 (flush)
+- update쿼리를 직접만들일이 별로 없다.
+- 하지만 update가 자주 일어나는 경우, 만들어 쓸수 있다.(추천하진 않는다.)
+    ```
+    @Modifying
+    @Query("UPDATE Post p SET p.title = ?2 WHERE p.id = ?1")
+    int updateTitle(Long id, String title);
+    ```
+        
+- 추천하지 않는 이유
+    - 1차캐싱때문에 Persistent 상태의 객체를 select 하지 않고 그냥 가져온다.(트랜잭션이 끝나지 않았다.)
+        ![springjpa](image/image2.PNG)
+    - 문제를 해결하려면...
+        - clearAutomatically = true
+            - 실행 후, Persistent Context에 들어있던 캐쉬를 비워준다.   
+            그래야 find할 때,  다시 새로 읽어온다.
+        - flushAutomatically = true
+            - 실행 전, Persistent Context상태를 flush 한다.   
+            데이터 변경사항을 update하기위해
+<br><br>
+
+### EntityGraph
+- 쿼리 메소드 마다 연관 관계의 Fetch 모드를 설정 할 수 있다.
+- 예).. fetch = FetchType.LAZY를 기본으로 하되 필요한 경우에따라 EAGER로 사용하고 싶을때
+
+#### @NamedEntityGraph
+- @Entity에서 재사용할 여러 엔티티 그룹을 정의할 때 사용
+
+#### @EntityGraph
+- @NamedEntityGraph에 정의되어 있는 엔티티 그룹을 사용 함.
+    ![springjpa](image/image4.PNG)
+- 그래프 타입 설정 가능
+    - (기본값) FETCH: 설정한 엔티티 애트리뷰트는 EAGER 패치 나머지는 LAZY 패치.
+    - LOAD: 설정한 엔티티 애트리뷰트는 EAGER 패치 나머지는 기본 패치 전략 따름.
+- @NamedEntityGraph 정의 되어있지않아도 attributePaths를 설정하여 사용할 수 있다.
+    ![springjpa](image/image5.PNG)
+    
+#### 비교 
+![springjpa](image/image3.PNG)
+<br>
+

@@ -1,5 +1,7 @@
 package me.bong.springjpa06.post;
 
+import org.h2.store.PageOutputStream;
+import org.hibernate.Hibernate;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -124,5 +127,20 @@ public class PostControllerTest {
 
         List<Post> all = postRepository.findByTitle("Spring", JpaSort.unsafe("LENGTH(title)"));
         assertThat(all.size()).isEqualTo(1);
+    }
+
+    @Test
+    public void updateTitle(){
+        Post post = new Post();
+        post.setTitle("spring");
+        Post spring = postRepository.save(post);
+
+        int update = postRepository.updateTitle(spring.getId(), "hibernate");
+        assertThat(update).isEqualTo(1);
+
+        Optional<Post> byId = postRepository.findById(post.getId());
+        assertThat(byId.get().getTitle()).isEqualTo("hibernate");
+
+
     }
 }
