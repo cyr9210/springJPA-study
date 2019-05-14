@@ -154,5 +154,95 @@
 
 <br>
 
+## 스프링 데이터 JPA
+
+### JPA Repository
+
+#### @EnableJpaRepositories
+- 스프링 부트 사용할 때는 사용하지 않아도 자동 설정 됨.
+- 스프링 부트 사용하지 않을 때는 @Configuration과 같이 사용.
+- @Repository 안붙여도 된다. (실제 구현체에서 가지고 있다. 중복임..)
+
+#### @Repository
+- SQLExcpetion 또는 JPA 관련 예외를 스프링의 DataAccessException으로 변환 해준다.
+
+### 엔티티 저장하기
+    
+#### Transient인지 Detached 인지 어떻게 판단 하는가?
+- 엔티티의 @Id 프로퍼티를 찾는다. 해당 프로퍼티가 null이면 Transient 상태로 판단하고 id가 null이 아니면 Detached 상태로 판단한다.
+- 엔티티가 Persistable 인터페이스를 구현하고 있다면 isNew() 메소드에 위임한다.
+- JpaRepositoryFactory를 상속받는 클래스를 만들고 getEntityInfomration()을 오버라이딩해서 자신이 원하는 판단 로직을 구현할 수도 있다.
+
+#### EntityManager.persist()
+- [참고문서](https://docs.oracle.com/javaee/6/api/javax/persistence/EntityManager.html#persist(java.lang.Object))
+- Persist() 메소드에 넘긴 그 엔티티 객체를 Persistent 상태로 변경한다.
+
+#### EntityManager.merge()
+- [참고문서](https://docs.oracle.com/javaee/6/api/javax/persistence/EntityManager.html#merge(java.lang.Object))
+- Merge() 메소드에 넘긴 그 엔티티의 복사본을 만들고, 그 복사본을 다시 Persistent 상태로 변경하고 그 복사본을 반환한다.
+
+#### JpaRepository의 save()
+- JpaRepository의 save()는 단순히 새 엔티티를 추가하는 메소드가 아님
+    - Transient 상태의 객체라면 EntityManager.persist()
+    - Detached 상태의 객체라면 EntityManager.merge()
+    - **merge / persist 관련 오류 발생이 있을 수 있음으로 언제나 Repository에서 리턴되는 값을 사용하자.**
+    ![springjpa](image/image1.PNG);
+
+---
+#### 테스트 범위에 따라서 달라지는 결과
+- @SpringBootTest
+    - postRepository.save()에만 트랜잭션이 적용됨
+    - 테스트 내에서는 entitymanager가 객체를 모른다.
+- @DataJpaTest
+    - 트랜잭션이 테스트 단위이다.
+    - postRepository의 오퍼레이션과  EntityManager 모두 한 트랜잭션
+    - entitymanager가 객체를 안다.
+---
 
 
+### 쿼리 메소드
+#### 쿼리 생성하기
+- [참고문서](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#jpa.query-methods.query-creation)
+- And, Or
+- Is, Equals
+- LessThan, LessThanEqual, GreaterThan, GreaterThanEqual
+- After, Before
+- IsNull, IsNotNull, NotNull
+- Like, NotLike
+- StartingWith, EndingWith, Containing
+- OrderBy
+- Not, In, NotIn
+- True, False
+- IgnoreCase
+
+#### 쿼리 찾아쓰기
+- 엔티티에 정의한 쿼리 찾아 사용하기 JPA Named 쿼리
+    - @NamedQuery
+    - @NamedNativeQuery
+- 리포지토리 메소드에 정의한 쿼리 사용하기
+    - @Query
+    - @Query(nativeQuery=true)
+
+### Sort
+- **이전과 마찬가지로 Pageable이나 Sort를 매개변수로 사용할 수 있는데, @Query와 같이 사용할 때 제약 사항이 하나 있다.**
+- Sort는 그 안에서 사용한 프로퍼티 또는 alias가 엔티티에 없는 경우에는 예외가 발생합니다.
+- Order by 절에서 함수를 호출하는 경우에는 Sort를 사용하지 못합니다. 그 경우에는 JpaSort.unsafe()를 사용 해야 합니다.
+    - JpaSort.unsafe()를 사용하면 함수 호출을 할 수 있습니다.
+    - JpaSort.unsafe(“LENGTH(firstname)”);
+
+### Named Parameter과 SpEL
+#### Named Parameter
+- @Query에서 참조하는 매개변수를 ?1, ?2 이렇게 채번으로 참조하는게 아니라 이름으로 :title 이렇게 참조할 수 있다.
+    ```
+    @Query("SELECT p FROM Post AS p WHERE p.title = :title")
+    List<Post> findByTitle(@Param("title") String title, Sort sort);
+    ```
+
+#### SpEL
+- 스프링 표현 언어
+- [참고문서](https://docs.spring.io/spring/docs/current/spring-framework-reference/core.html#expressions)
+- @Query에서 엔티티 이름을 #{#entityName} 으로 표현할 수 있습니다.
+    ```
+     @Query("SELECT p FROM #{#entityName} AS p WHERE p.title = :title")
+     List<Post> findByTitle(@Param("title") String title, Sort sort);
+    ```
