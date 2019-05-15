@@ -1,4 +1,6 @@
-### 스프링 데이터 Common: Web 2부: DomainClassConverter
+## 스프링 데이터 Common: Web
+
+### DomainClassConverter
 
 #### 스프링 Converter
 - [참고문서](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/convert/converter/Converter.html)
@@ -29,7 +31,7 @@
     - 어떤타입 -> 문자열 프린팅
 <br><br>
 
-### 스프링 데이터 Common: Web 3부: Pageable과 Sort 매개변수
+### Pageable과 Sort 매개변수
 #### 스프링 MVC HandlerMethodArgumentResolver
 - 스프링 MVC 핸들러 메소드의 매개변수로 받을 수 있는 객체를 확장하고 싶을 때 사용하는 인터페이스
 - [참고문서](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/web/method/support/HandlerMethodArgumentResolver.html)
@@ -68,7 +70,7 @@
     ```
 <br><br>
 
-### 스프링 데이터 Common: Web 4부: HATEOAS
+### HATEOAS
 #### Page를 PagedResource로 변환하기
 - 일단 HATEOAS 의존성 추가 (starter-hateoas)
 - 핸들러 매개변수로 PagedResourcesAssembler
@@ -427,4 +429,119 @@
     - 여러 조건들에 대하여 조합도 가능하여, 메소드를 많이 늘리지 않고, 사용할 수 있어 편리하다.(단, 테스트는 필수이다.) 
 <br>
 
+### Query by Example
+필드 이름을 작성할 필요 없이 단순한 인터페이스를 통해 동적으로 쿼리를 만드는 기능을 제공하는 사용자 친화적인 쿼리 기술입니다.
+- [참고문서](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#query-by-example)
+#### Example
+- Example = Probe + ExampleMatcher
+    - Probe는 필드에 어떤 값들을 가지고 있는 도메인 객체.
+    - ExampleMatcher는 Prove에 들어있는 그 필드의 값들을 어떻게 쿼리할 데이터와 비교할지 정의한 것.
+    - Example은 그 둘을 하나로 합친 것. 이걸로 쿼리를 함.
+    
+#### 사용방법
+- Repository에 QueryByExampleExecutor 상속 추가
+    ```
+    public interface CommentRepository extends JpaRepository<Comment, Long>, QueryByExampleExecutor<Comment> {
+    }
+    ```
+    
+- 사용
+    ![springjpa](image/image17.PNG)
+    
+#### 장점
+- 별다른 코드 생성기나 애노테이션 처리기 필요 없음.
+- 도메인 객체 리팩토링 해도 기존 쿼리가 깨질 걱정하지 않아도 됨.(실질적으로는 아니다.)
 
+#### 단점
+- nested 또는 프로퍼티 그룹 제약 조건을 못 만든다.
+- 조건이 제한적이다. 문자열은 starts/contains/ends/regex 가 가능하고 그밖에 propery는 값이 정확히 일치해야 한다.
+   
+**추천하지 않는다. QueryByDSL predicate 또는 Specification을 사용하는것을 추천한다.**
+<br><br>
+
+### 트랜잭션
+- 스프링 프레임워크에서 지원하는 트랜잭션과 거의 유사하다.
+- 기본적으로 Repository 메소드들은 기본적으로 @Transactional이 적용되어있다.
+
+#### @Transactional
+- [참고문서](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/annotation/Transactional.html)
+- 클래스, 인터페이스, 메소드에 사용할 수 있으며, 메소드에 가장 가까운 애노테이션이 우선 순위가 높다.
+- 기본적으로 RuntimeException 또는 Error 발생 시, 롤백을 한다.
+    - checked Exception은 롤백 하지 않음.
+        - 롤백을 시키고 싶다면 rollbackfor에 설정해주어야한다.
+    - 롤백을 하고싶지 안핟면 norollbackfor등의 설정
+- timeout 설정가능
+
+- 트랜잭션 매니저 지정가능
+    - JPA트랜잭션 매니저를 쓸 것이다.
+
+- readoOnly (최적화 위해서 사용)
+    - Flush 모드를 NEVER로 설정하여, Dirty checking을 하지 않도록 한다.
+    > Dirty Checking이란 상태 변경 검사   
+    JPA에서는 트랜잭션이 끝나는 시점에 변화가 있는 모든 엔티티 객체를 데이터베이스에 자동으로 반영해줍니다.
+
+- Isolation
+    - 여러개의 트랜잭션이 동시에 데이터에 접근했을 때, 설정
+    - 기본값은 데이터베이스에 따라서 정해진다.
+    - Read Uncommitted
+        - 한 트랜잭션에서 커밋하지 않은 데이타에 다른 트랜잭션이 접근 가능하다. 즉, 커밋하지 않은 데이타를 읽을 수 있다.
+        - 이 수준은 당연히 위에서 언급한 모든 문제에 대해 발생가능성이 존재한다. 대신, 동시 처리 성능은 가장 높다.
+        - 발생 문제점 : Dirty Read, Non-Repeatable Read, Phantom Read
+    - Read Committed
+        - 커밋이 완료된 데이타만 읽을 수 있다.
+        - Dirty Read가 발생할 여지는 없으나, Read Uncommitted 수준보다 동시 처리 성능은 떨어진다.  대신 Non-Repeatable Read 및 Phantom Read는 발생 가능하다.데이타베이스들은 보통 Read Committed를 디폴트 수준으로 지정한다.
+        - 발생 문제점 : Non-Repeatable Read, Phantom Read
+    - Repeatable Read
+        - 트랜잭션 내에서 한번 조회한 데이타를 반복해서 조회해도 같은 데이타가 조회 된다
+        - 이는 개별 데이타 이슈인 Dirty Read나 Non-Repeatable Read는 발생하지 않지만, 결과 집합 자체가 달라지는 Phantom Read는 발생가능하다.
+        - 발생 문제점 : Phantom Read
+    - Serializable
+        - 가장 엄격한 격리 수준
+        - 위 3가지 문제점을 모두 커버 가능하다. 하지만 동시 처리 성능은 급격히 떨어질 수 있다.
+    - Isolation 관련 문제점
+        - Dirty Read   
+        한 트랜잭션(T1)이 데이타에 접근하여 값을 'A'에서 'B'로 변경했고 아직 커밋을 하지 않았을때, 다른 트랜잭션(T2)이 해당 데이타를 Read 하면?
+        T2가 읽은 데이타는 B가 될 것이다. 하지만 T1이 최종 커밋을 하지 않고 종료된다면, T2가 가진 데이타는 꼬이게 된다.
+        
+        - Non-Repeatable Read   
+        한 트랜잭션(T1)이 데이타를 Read 하고 있다. 이때 다른 트랜잭션(T2)가 데이타에 접근하여 값을 변경 또는, 데이타를 삭제하고 커밋을 때려버리면?
+        그 후 T1이 다시 해당 데이타를 Read하고자 하면 변경된 데이타 혹은 사라진 데이타를 찾게 된다.
+        
+        - Phantom Read   
+        트랜잭션(T1) 중에 특정 조건으로 데이타를 검색하여 결과를 얻었다. 이때 다른 트랜잭션(T2)가 접근해 해당 조건의 데이타 일부를 삭제 또는 추가 했을때, 아직 끝나지 않은 T1이 다시 한번 해당 조건으로 데이타를 조회 하면 T2에서 추가/삭제된 데이타가 함께 조회/누락 된다. 그리고 T2가 롤백을 하면? 데이타가 꼬인다
+
+    - [참고, 출처 - wmJun](https://feco.tistory.com/45)
+    
+- Propagation
+    - 트랜잭션을 어떻게 전파시킬 것 인지 대한 설정
+
+>Dirty Checking(더티체킹)  시, 변경된 필드값만 updqte 하기위해서는 @DynamicUpdate를 사용한다.
+
+<br>
+
+### Auditing
+- 엔티티의 변경 시점에 언제, 누가 변경했는지에 대한 정보를 기록하는 기능.
+
+#### 스프링 데이터 JPA의 Auditing
+![springjpa](image/image21.PNG)
+
+- 스프링 부트가 자동 설정 해주지 않는다.
+- 엔티티 클래스 위에 @EntityListeners(AuditingEntityListener.class) 추가
+    ![springjpa](image/image18.PNG)
+- AuditorAware 구현체 만들기   
+    ![springjpa](image/image19.PNG)
+    - security를 사용하여 현재 유저정보를 가져올 수 있지만 print문으로 대체하였다.
+- @EnableJpaAuditing 및 AuditorAware 빈 이름 설정하기.
+    ![springjpa](image/image20.PNG)
+    > 빈 이름은 첫글자를 소문자로 변경한것이다.
+    
+#### 라이프 사이클 이벤트
+- [참고문서](https://docs.jboss.org/hibernate/orm/4.0/hem/en-US/html/listeners.html)
+- 엔티티에 변화가 일어났을 때, 특정한 콜백을 실행할 수 있는 이벤트를 발생시켜준다.
+- @PrePersist
+    - 엔티티가 저장이 되기전에 호출
+    - 예)..
+        ![springjpa](image/image22.PNG)
+- @PreUpdate
+- 여러개가 있다. 살펴보길..
+<br><br>
