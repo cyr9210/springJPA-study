@@ -278,10 +278,10 @@
 
 #### @NamedEntityGraph
 - @Entity에서 재사용할 여러 엔티티 그룹을 정의할 때 사용
-
+    ![springjpa](image/image4.PNG)
 #### @EntityGraph
 - @NamedEntityGraph에 정의되어 있는 엔티티 그룹을 사용 함.
-    ![springjpa](image/image4.PNG)
+    ![springjpa](image/image6.PNG)
 - 그래프 타입 설정 가능
     - (기본값) FETCH: 설정한 엔티티 애트리뷰트는 EAGER 패치 나머지는 LAZY 패치.
     - LOAD: 설정한 엔티티 애트리뷰트는 EAGER 패치 나머지는 기본 패치 전략 따름.
@@ -291,4 +291,140 @@
 #### 비교 
 ![springjpa](image/image3.PNG)
 <br>
+
+### Projection
+- 엔티티의 일부 데이터만 가져오기.
+
+#### 인터페이스 기반 프로젝션
+- Nested 프로젝션 가능.
+    - 인터페이스에 메소드 정의   
+        ![springjpa](image/image7.PNG)
+    - 타입을 해당 인터페이스 타입으로 변경
+        ![springjpa](image/image8.PNG)    
+- Open 프로젝션
+    - @Value(SpEL)을 사용해서 연산을 할 수 있다. 스프링 빈의 메소드도 호출 가능.
+    ![springjpa](image/image9.PNG)
+    - 쿼리 최적화를 할 수 없다. SpEL을 엔티티 대상으로 사용하기 때문에.
+    ![springjpa](image/image10.PNG)
+- Closed 프로젝션 (추천)
+    - 쿼리를 최적화 할 수 있다. 가져오려는 애트리뷰트가 뭔지 알고 있으니까.
+    - Java 8의 디폴트 메소드를 사용해서 연산을 할 수 있다.
+    ![springjpa](image/image11.PNG)
+    
+
+#### 클래스 기반 프로젝션
+- DTO   
+    ![springjpa](image/image12.PNG)
+- 롬복 @Value로 코드 줄일 수 있음
+    ![springjpa](image/image13.PNG)
+
+#### 다이나믹 프로젝션
+- 프로젝션 용 메소드 하나만 정의하고 실제 프로젝션 타입은 타입 인자로 전달하기.
+- 그러나 오버로딩이 안됨으로 제네릭을 사용하자.
+    ![springjpa](image/image14.PNG)
+<br>
+
+### Specifications
+에릭 에반스의 책 DDD에서 언급하는 Specification 개념을 차용 한 것으로 QueryDSL의 Predicate와 비슷하다.
+- 조건을 하나의 스펙으로 등록이 가능하다.
+
+#### 설정
+- [참고문서](https://docs.jboss.org/hibernate/stable/jpamodelgen/reference/en-US/html_single/)
+- 의존성 설정
+    ```
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-jpamodelgen</artifactId>
+    </dependency>
+    ```
+    
+- 플러그인 설정
+    ```
+    <plugin>
+        <groupId>org.bsc.maven</groupId>
+        <artifactId>maven-processor-plugin</artifactId>
+        <version>2.0.5</version>
+        <executions>
+            <execution>
+                <id>process</id>
+                <goals>
+                    <goal>process</goal>
+                </goals>
+                <phase>generate-sources</phase>
+                <configuration>
+                    <processors>
+                        <processor>org.hibernate.jpamodelgen.JPAMetaModelEntityProcessor</processor>
+                    </processors>
+                </configuration>
+            </execution>
+        </executions>
+        <dependencies>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-jpamodelgen</artifactId>
+                <version>${hibernate.version}</version>
+            </dependency>
+        </dependencies>
+    </plugin>
+
+    ```
+    
+- IDE에 애노테이션 처리기 설정
+    ![springjpa](image/image15.PNG)
+    - org.hibernate.jpamodelgen.JPAMetaModelEntityProcessor
+    
+#### 사용
+- JpaSpecificationExecutor 상속 추가
+    ```
+    public interface CommentRepository extends JpaRepository<Comment, Long>, JpaSpecificationExecutor<Comment> {    
+    }
+    ```
+
+- Spec 클래스
+    ```
+    public class CommentSpec {
+    
+        public static Specification<Comment> isBest(){
+            return new Specification<Comment>(){
+    
+                @Override
+                public Predicate toPredicate(Root<Comment> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder builder) {
+    
+                    return builder.isTrue(root.get(Comment_.best));
+                }
+            }; //여기서 root comment  코멘트가 베스트인지
+        }
+    
+        public static Specification<Comment> isGood(){
+            return new Specification<Comment>() {
+                @Override
+                public Predicate toPredicate(Root<Comment> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder builder) {
+                    return builder.greaterThan(root.get(Comment_.up), 10);
+                }
+            }; // 코멘트의 up이 10개보다 큰것
+        }
+    }
+    ```
+    
+    - 람다 사용 시
+        ```
+        public class CommentSpec {
+        
+            public static Specification<Comment> isBest(){
+                return (Specification<Comment>)
+                        (root, criteriaQuery, builder) -> builder.isTrue(root.get(Comment_.best)); //여기서 root comment  코멘트가 베스트인지
+            }
+        
+            public static Specification<Comment> isGood(){
+                return (Specification<Comment>)
+                        (root, criteriaQuery, builder) -> builder.greaterThan(root.get(Comment_.up), 10); // 코멘트의 up이 10개보다 큰것
+            }
+        }
+        ```
+        
+- test
+    ![springjpa](image/image16.PNG)
+    - 여러 조건들에 대하여 조합도 가능하여, 메소드를 많이 늘리지 않고, 사용할 수 있어 편리하다.(단, 테스트는 필수이다.) 
+<br>
+
 

@@ -18,4 +18,10 @@ public class Comment {
     @ManyToOne(fetch = FetchType.LAZY)
     private Post post;
 
+    private int up;
+
+    private int down;
+
+    private boolean best;
+
 }
