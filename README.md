@@ -9,6 +9,9 @@
 #### 02 : [엔티티 맵핑, Value 타입 맵핑, 관계 맵핑](https://cyr9210.github.io/2019/04/30/Spring/springjpa03/), [Cascade, Fetch, Query, 스프링 데이터 JPA 소개 및 원리](https://cyr9210.github.io/2019/04/30/Spring/springjpa04/) 
 
 ### 스프링 데이터 JPA 활용
-#### 03, 04 : [스프링 데이터 Common]()
+#### 03, 04 : [스프링 데이터 Common](https://cyr9210.github.io/2019/05/03/Spring/springjpa05/)
+
+#### 05, 06 : [스프링 데이터 JPA](https://cyr9210.github.io/2019/05/03/Spring/springjpa06/)
+
 
 
